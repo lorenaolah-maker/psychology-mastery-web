@@ -2,7 +2,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
-// Estructura de libro subido con texto extraído
+// Estructura de libro de estudio
+interface BookStudyItem {
+  id: string;
+  title: string;
+  author: string;
+  editorial: string;
+  yearWritten: string;
+  area: string;
+  status: 'Completado' | 'En lectura' | 'Por leer';
+  summary: string;
+  keyConcepts: string[];
+}
+
+// Estructura de PDF subido con texto extraído
 interface UploadedBook {
   id: string;
   name: string;
@@ -26,10 +39,172 @@ export default function PsychologyMasteryApp() {
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [processStatus, setProcessStatus] = useState<string | null>(null);
 
-  // Diccionario Contextual
+  // Diccionario Contextual Multi-palabra
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchMatch[]>([]);
   const [selectedBookFilter, setSelectedBookFilter] = useState('TODOS');
+
+  // Las 14 Obras de Estudio
+  const initialStudyBooks: BookStudyItem[] = [
+    {
+      id: '1',
+      title: 'Introducción al psicoanálisis',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1916-1917',
+      area: 'Fundamentos y Metapsicología',
+      status: 'En lectura',
+      summary: 'Conferencias magistrales donde Freud sistematiza los actos fallidos, la teoría de los sueños y la teoría general de las neurosis.',
+      keyConcepts: ['Actos fallidos', 'Simbolismo onírico', 'Libido', 'Resistencia', 'Transferencia']
+    },
+    {
+      id: '2',
+      title: 'Esquema del psicoanálisis',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1940',
+      area: 'Síntesis Teórica Final',
+      status: 'Por leer',
+      summary: 'Obra testamentaria póstuma que resume concisamente el aparato psíquico, las pulsiones y la técnica terapéutica.',
+      keyConcepts: ['Aparato psíquico', 'Segunda tópica', 'Eros y Tánatos', 'Técnica analítica']
+    },
+    {
+      id: '3',
+      title: 'Autobiografía',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1925',
+      area: 'Historia del Movimiento',
+      status: 'Por leer',
+      summary: 'Crónica personal y científica de los descubrimientos que forjaron el nacimiento y la consolidación del movimiento psicoanalítico.',
+      keyConcepts: ['Catarsis de Breuer', 'Ruptura con Fliess', 'Génesis teórica']
+    },
+    {
+      id: '4',
+      title: 'Escritos sobre la histeria',
+      author: 'Sigmund Freud y Josef Breuer',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1895',
+      area: 'Clínica Fundacional',
+      status: 'Completado',
+      summary: 'Estudios clínicos sobre la histeria femenina y el paso revolucionario del método hipnótico al habla catártica.',
+      keyConcepts: ['Conversión somática', 'Trauma psíquico', 'Terapia catártica', 'Caso Anna O.']
+    },
+    {
+      id: '5',
+      title: 'La interpretación de los sueños',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1900',
+      area: 'Vía Regia al Inconsciente',
+      status: 'En lectura',
+      summary: 'Fundamento que demuestra que el sueño es el cumplimiento disfrazado de un deseo reprimido.',
+      keyConcepts: ['Contenido manifiesto', 'Pensamientos latentes', 'Condensación', 'Desplazamiento', 'Censura']
+    },
+    {
+      id: '6',
+      title: 'Psicopatología de la vida cotidiana',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1901',
+      area: 'Manifestaciones del Inconsciente',
+      status: 'Completado',
+      summary: 'Análisis minucioso de lapsus linguae, olvido de nombres propios y acciones fallidas en la vida diaria.',
+      keyConcepts: ['Lapsus', 'Olvido motivado', 'Traspapelar', 'Determinismo psíquico']
+    },
+    {
+      id: '7',
+      title: 'El chiste y su relación con lo inconsciente',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1905',
+      area: 'Economía Psíquica',
+      status: 'Por leer',
+      summary: 'Estudio de los mecanismos que permiten liberar energía psíquica y burlar la censura a través del humor.',
+      keyConcepts: ['Ahorro de gasto psíquico', 'Técnicas del chiste', 'Alivio de tensión']
+    },
+    {
+      id: '8',
+      title: 'Tres ensayos sobre teoría sexual',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1905',
+      area: 'Desarrollo Psicosexual',
+      status: 'En lectura',
+      summary: 'Evolución de la sexualidad infantil, las zonas erógenas y las fijaciones que estructuran las futuras neurosis.',
+      keyConcepts: ['Fase oral', 'Fase anal', 'Fase fálica', 'Complejo de Edipo', 'Pulsión parcial']
+    },
+    {
+      id: '9',
+      title: 'Más allá del principio del placer',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1920',
+      area: 'Giro Teórico Trascendental',
+      status: 'Por leer',
+      summary: 'Introducción del concepto de pulsión de muerte (Tánatos) y la compulsión a la repetición.',
+      keyConcepts: ['Compulsión a la repetición', 'Pulsión de muerte', 'Neurosis de guerra', 'Principio de Nirvana']
+    },
+    {
+      id: '10',
+      title: 'El yo y el ello',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1923',
+      area: 'Segunda Tópica Estructural',
+      status: 'En lectura',
+      summary: 'Presentación formal de las instancias psíquicas que rigen la personalidad humana.',
+      keyConcepts: ['Ello (pulsiones)', 'Yo (realidad)', 'Superyó (ideal moral)', 'Sentimiento inconsciente de culpa']
+    },
+    {
+      id: '11',
+      title: 'Nuevas aportaciones al psicoanálisis',
+      author: 'Sigmund Freud',
+      editorial: 'Alianza Editorial',
+      yearWritten: '1933',
+      area: 'Revisión y Conferencias',
+      status: 'Por leer',
+      summary: 'Revisión crítica de la doctrina onírica, las defensas y la cosmovisión científica del psicoanálisis.',
+      keyConcepts: ['Descomposición de la personalidad', 'Sueño y ocultismo', 'Feminidad']
+    },
+    {
+      id: '12',
+      title: 'El yo y los mecanismos de defensa',
+      author: 'Anna Freud',
+      editorial: 'Paidós',
+      yearWritten: '1936',
+      area: 'Psicología del Yo y Defensas',
+      status: 'En lectura',
+      summary: 'Sistematización exhaustiva de los recursos que emplea el yo para protegerse de la angustia y el conflicto.',
+      keyConcepts: ['Sublimación', 'Formación reactiva', 'Proyección', 'Identificación con el agresor', 'Regresión']
+    },
+    {
+      id: '13',
+      title: 'El carácter neurótico',
+      author: 'Alfred Adler',
+      editorial: 'Paidós',
+      yearWritten: '1912',
+      area: 'Psicología Individual',
+      status: 'Completado',
+      summary: 'Fundamento de la psicología individual: el afán de poder, el sentimiento de inferioridad y las compensaciones.',
+      keyConcepts: ['Sentimiento de inferioridad', 'Afán de superioridad', 'Arreglo neurótico', 'Línea de vida', 'Finalismo ficticio']
+    },
+    {
+      id: '14',
+      title: 'Análisis del carácter',
+      author: 'Wilhelm Reich',
+      editorial: 'Paidós',
+      yearWritten: '1933',
+      area: 'Coraza Caracterológica y Somática',
+      status: 'En lectura',
+      summary: 'Pionero estudio de cómo las resistencias psíquicas se solidifican en tensiones corporales crónicas.',
+      keyConcepts: ['Coraza caracterial', 'Coraza muscular', 'Vegetoterapia', 'Resistencia del carácter', 'Potencia orgástica']
+    }
+  ];
+
+  const [studyBooks, setStudyBooks] = useState<BookStudyItem[]>(initialStudyBooks);
+  const [bookAuthorFilter, setBookAuthorFilter] = useState('TODOS');
+  const [bookStageFilter, setBookStageFilter] = useState('TODOS');
 
   // Temporizador de Estudio (30m, 1h, 2h, 3h)
   const [pomoMinutes, setPomoMinutes] = useState(30);
@@ -41,7 +216,7 @@ export default function PsychologyMasteryApp() {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // Web Audio Context compartido para efectos sonoros táctiles
+  // Web Audio Context compartido para efectos táctiles
   const sfxCtxRef = useRef<AudioContext | null>(null);
 
   const getSfxContext = () => {
@@ -101,37 +276,46 @@ export default function PsychologyMasteryApp() {
     } catch {}
   };
 
-  // Frase teórica rotativa
-  const [quoteIdx, setQuoteIdx] = useState(0);
-  const quotes = [
-    { text: 'La voz del intelecto es suave, pero no descansa hasta haber logrado ser escuchada.', author: 'Sigmund Freud' },
-    { text: 'El carácter consiste en una alteración crónica del yo que podemos calificar de rigidez.', author: 'Wilhelm Reich' },
-    { text: 'Una mentira no tendría sentido alguno a menos que la verdad fuera tenida por peligrosa.', author: 'Alfred Adler' },
-    { text: 'El yo procura defenderse contra las invasiones del ello mediante diversos mecanismos.', author: 'Anna Freud' }
-  ];
+  // Normalizador de texto: elimina tildes y signos para búsquedas perfectas
+  const normalize = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
 
-  // Cargar libros y minutos de LocalStorage al iniciar
+  // Cargar datos guardados
   useEffect(() => {
-    const saved = localStorage.getItem('psy_uploaded_books');
+    const savedBooks = localStorage.getItem('psy_uploaded_books');
+    const savedStudyBooks = localStorage.getItem('psy_study_books');
     const mins = localStorage.getItem('psy_study_mins');
-    if (saved) {
-      try {
-        setUploadedBooks(JSON.parse(saved));
-      } catch {}
+
+    if (savedBooks) {
+      try { setUploadedBooks(JSON.parse(savedBooks)); } catch {}
+    }
+    if (savedStudyBooks) {
+      try { setStudyBooks(JSON.parse(savedStudyBooks)); } catch {}
     }
     if (mins) {
       setTotalStudyMinutes(Number(mins));
     }
   }, []);
 
-  // Guardar libros cada vez que cambien
+  // Guardar datos
   useEffect(() => {
     try {
       localStorage.setItem('psy_uploaded_books', JSON.stringify(uploadedBooks));
     } catch {
-      setProcessStatus('⚠️ La memoria local está al límite. Considera limpiar libros antiguos.');
+      setProcessStatus('⚠️ Memoria local al límite. Considera eliminar algún archivo pesado.');
     }
   }, [uploadedBooks]);
+
+  useEffect(() => {
+    localStorage.setItem('psy_study_books', JSON.stringify(studyBooks));
+  }, [studyBooks]);
 
   useEffect(() => {
     localStorage.setItem('psy_study_mins', totalStudyMinutes.toString());
@@ -151,7 +335,7 @@ export default function PsychologyMasteryApp() {
     return () => clearInterval(timer);
   }, [isRunning, timeLeft, pomoMinutes]);
 
-  // Audio de lluvia ambiental
+  // Audio ambiental de lluvia suave
   const toggleFocusAudio = () => {
     playPopSound();
     if (isAudioPlaying) {
@@ -198,7 +382,7 @@ export default function PsychologyMasteryApp() {
     }
   };
 
-  // Procesamiento nativo de archivos PDF subidos desde el navegador
+  // Procesamiento nativo de archivos PDF
   const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     playPopSound();
     const files = event.target.files;
@@ -209,7 +393,6 @@ export default function PsychologyMasteryApp() {
 
     try {
       const pdfjs = await import('pdfjs-dist');
-      // Configurar worker de pdfjs
       pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
       for (let i = 0; i < files.length; i++) {
@@ -244,7 +427,7 @@ export default function PsychologyMasteryApp() {
       }
 
       playChimeSound();
-      setProcessStatus(`✅ ¡Libro procesado con éxito! Ya puedes buscar cualquier palabra en su texto.`);
+      setProcessStatus(`✅ ¡Libro procesado con éxito! Ya puedes buscar conceptos compuestos en su texto.`);
     } catch (err) {
       console.error(err);
       setProcessStatus('❌ Error al procesar el archivo. Asegúrate de que no esté protegido con contraseña.');
@@ -254,7 +437,7 @@ export default function PsychologyMasteryApp() {
     }
   };
 
-  // Buscador Contextual que extrae exactamente los párrafos de los libros subidos
+  // Buscador Contextual Multi-palabra (Ej: "terapia catártica", "coraza muscular")
   const handleSearchWord = () => {
     playPopSound();
     if (!searchTerm.trim()) {
@@ -262,7 +445,10 @@ export default function PsychologyMasteryApp() {
       return;
     }
 
-    const term = searchTerm.trim().toLowerCase();
+    const rawTerm = searchTerm.trim();
+    const normalizedTerm = normalize(rawTerm);
+    const searchTokens = normalizedTerm.split(' ').filter(t => t.length > 1);
+
     const matches: SearchMatch[] = [];
 
     const targetBooks = selectedBookFilter === 'TODOS'
@@ -270,15 +456,23 @@ export default function PsychologyMasteryApp() {
       : uploadedBooks.filter(b => b.id === selectedBookFilter);
 
     targetBooks.forEach(book => {
-      // Dividir el texto en párrafos u oraciones largas
       const paragraphs = book.fullText.split(/\n+/);
 
       paragraphs.forEach(p => {
-        const pLower = p.toLowerCase();
-        if (pLower.includes(term)) {
-          // Extraer la oración más cercana que contiene el término
+        const normP = normalize(p);
+
+        // Coincidencia 1: La frase exacta completa (ej. "terapia catartica")
+        const hasExactPhrase = normP.includes(normalizedTerm);
+
+        // Coincidencia 2: Todas las palabras clave están dentro del mismo párrafo
+        const hasAllTokens = searchTokens.length > 1 && searchTokens.every(tok => normP.includes(tok));
+
+        if (hasExactPhrase || hasAllTokens) {
           const sentences = p.split(/(?<=[.?!])\s+/);
-          const matchingSentence = sentences.find(s => s.toLowerCase().includes(term)) || p;
+          const matchingSentence = sentences.find(s => {
+            const normS = normalize(s);
+            return normS.includes(normalizedTerm) || (searchTokens.length > 1 && searchTokens.every(tok => normS.includes(tok)));
+          }) || p;
 
           matches.push({
             bookName: book.name,
@@ -289,7 +483,7 @@ export default function PsychologyMasteryApp() {
       });
     });
 
-    setSearchResults(matches.slice(0, 30)); // Limitar a las 30 mejores apariciones
+    setSearchResults(matches.slice(0, 35));
     if (matches.length > 0) {
       playChimeSound();
     }
@@ -302,6 +496,18 @@ export default function PsychologyMasteryApp() {
       setSearchResults(prev => prev.filter(r => r.bookName !== name));
     }
   };
+
+  const filteredStudyBooks = studyBooks.filter(b => {
+    const matchesAuthor = bookAuthorFilter === 'TODOS' ? true :
+      bookAuthorFilter === 'FREUD' ? b.author.includes('Sigmund') :
+      bookAuthorFilter === 'ANNA' ? b.author.includes('Anna') :
+      bookAuthorFilter === 'ADLER' ? b.author.includes('Adler') :
+      b.author.includes('Reich');
+
+    const matchesStage = bookStageFilter === 'TODOS' ? true : b.status === bookStageFilter;
+
+    return matchesAuthor && matchesStage;
+  });
 
   return (
     <div className="flex min-h-screen bg-[#F1F7F7] text-[#5D6B6B] font-sans antialiased selection:bg-[#F7CBCA]">
@@ -330,7 +536,7 @@ export default function PsychologyMasteryApp() {
                 Psychology Mastery
               </div>
               <div className="text-[10px] text-[#7A8E8E] font-bold mt-0.5 flex items-center gap-1">
-                <span>📚</span> {uploadedBooks.length} Libros Indexados
+                <span>📚</span> 14 Obras • {uploadedBooks.length} PDFs
               </div>
             </div>
           </div>
@@ -338,9 +544,10 @@ export default function PsychologyMasteryApp() {
           {/* NAVEGACIÓN */}
           <nav className="space-y-2">
             {[
-              { id: 'diccionario', label: 'Diccionario de Mis Libros', icon: '🔍', badge: `${uploadedBooks.length} PDFs`, bg: 'bg-[#F7CBCA]' },
+              { id: 'diccionario', label: 'Diccionario de Mis Libros', icon: '🔍', badge: 'Frases y Conceptos', bg: 'bg-[#F7CBCA]' },
+              { id: 'obras', label: 'Mis Obras & Etapas', icon: '📖', badge: '14 Libros', bg: 'bg-[#BDD1D1]' },
               { id: 'subir', label: 'Subir & Gestionar PDFs', icon: '📤', badge: 'Cargar', bg: 'bg-[#D5E5E5]' },
-              { id: 'focus', label: 'Focus & Lectura Profunda', icon: '⏱️', badge: '30m - 3h', bg: 'bg-[#BDD1D1]' },
+              { id: 'focus', label: 'Focus & Lectura Profunda', icon: '⏱️', badge: '30m - 3h', bg: 'bg-[#F7CBCA]' },
             ].map(item => {
               const active = activeTab === item.id;
               return (
@@ -428,329 +635,6 @@ export default function PsychologyMasteryApp() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-[#7A8E8E] bg-[#D5E5E5] px-3 py-1 rounded-full">
-              Laboratorio Clínico & Corpus de Lectura 🌿
+              Santuario de Lectura & Teoría Clínica 🌿
             </span>
-            <h1 className="text-2xl font-black text-[#3B4747] tracking-tight mt-1">
-              Diccionario Psicológico de Mis Libros
-            </h1>
-          </div>
-
-          <div
-            onClick={() => {
-              playPopSound();
-              setQuoteIdx((quoteIdx + 1) % quotes.length);
-            }}
-            className="hidden sm:flex items-center gap-3 bg-white p-3.5 rounded-[22px] max-w-md cursor-pointer hover:scale-[1.01] transition-transform shadow-[6px_8px_18px_rgba(189,209,209,0.3)] border border-[#E3EFEA]"
-            title="Toca para cambiar de cita"
-          >
-            <span className="text-2xl">💬</span>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold text-[#3B4747] italic line-clamp-2">&quot;{quotes[quoteIdx].text}&quot;</p>
-              <span className="text-[10px] font-black text-[#7A8E8E]">— {quotes[quoteIdx].author}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ========================================================= */}
-        {/* 1. DICCIONARIO CONTEXTUAL BASADO ÚNICAMENTE EN LOS LIBROS */}
-        {/* ========================================================= */}
-        {activeTab === 'diccionario' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-[28px] p-6 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0] space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-black text-[#3B4747]">Buscar en el Texto Real de Mis Libros</h2>
-                  <p className="text-xs text-[#7A8E8E]">
-                    Escribe cualquier término clínico (ej. <em>coraza, represión, fijación, inferioridad</em>). Solo se mostrarán definiciones extraídas de los PDFs que has subido.
-                  </p>
-                </div>
-
-                {uploadedBooks.length > 0 && (
-                  <select
-                    value={selectedBookFilter}
-                    onChange={e => {
-                      playPopSound();
-                      setSelectedBookFilter(e.target.value);
-                    }}
-                    className="bg-[#F1F7F7] rounded-[18px] px-3.5 py-2 text-xs font-black text-[#3B4747] focus:outline-none"
-                  >
-                    <option value="TODOS">Buscar en todos mis libros ({uploadedBooks.length})</option>
-                    {uploadedBooks.map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <div className="flex-1 bg-[#F1F7F7] px-4 py-3 rounded-[20px] flex items-center gap-2.5">
-                  <span>🔍</span>
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSearchWord()}
-                    placeholder="Escribe una palabra o concepto para consultar su significado en el libro..."
-                    className="w-full bg-transparent border-none text-xs text-[#3B4747] placeholder-[#8A9C9C] focus:outline-none font-medium"
-                  />
-                  {searchTerm && (
-                    <button onClick={() => setSearchTerm('')} className="text-xs text-[#8A9C9C] hover:text-[#3B4747]">✕</button>
-                  )}
-                </div>
-
-                <button
-                  onClick={handleSearchWord}
-                  className="px-6 py-3 rounded-[20px] bg-gradient-to-r from-[#F7CBCA] to-[#E8B4B3] hover:brightness-105 text-[#3B4747] font-black text-xs shadow-md transition-all whitespace-nowrap"
-                >
-                  Buscar Definición
-                </button>
-              </div>
-            </div>
-
-            {/* AVISO SI NO HAY LIBROS SUBIDOS */}
-            {uploadedBooks.length === 0 && (
-              <div className="bg-white rounded-[26px] p-8 text-center space-y-3 border-2 border-dashed border-[#D5E5E5]">
-                <span className="text-4xl">📤</span>
-                <h3 className="text-base font-black text-[#3B4747]">Tu biblioteca aún no tiene libros subidos</h3>
-                <p className="text-xs text-[#7A8E8E] max-w-md mx-auto">
-                  Para que el diccionario extraiga definiciones exactas, ve a la pestaña <strong>Subir & Gestionar PDFs</strong> y carga los libros que ya leíste o estás leyendo.
-                </p>
-                <button
-                  onClick={() => {
-                    playPopSound();
-                    setActiveTab('subir');
-                  }}
-                  className="px-5 py-2.5 rounded-[18px] bg-[#D5E5E5] text-[#2C3838] font-black text-xs shadow-sm"
-                >
-                  Ir a subir mis libros en PDF ➔
-                </button>
-              </div>
-            )}
-
-            {/* RESULTADOS DE LA BÚSQUEDA */}
-            {searchResults.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-[#3B4747]">
-                    Se encontraron {searchResults.length} citas textuales para &quot;{searchTerm}&quot;:
-                  </span>
-                  <span className="text-[10px] text-[#7A8E8E] font-bold">Extraído directamente del PDF</span>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4">
-                  {searchResults.map((res, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-[26px] p-6 shadow-[6px_8px_20px_rgba(189,209,209,0.22)] border border-[#E8F0F0] space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase px-3 py-1 rounded-full bg-[#E3EFEA] text-[#5D6B6B]">
-                          📖 {res.bookName}
-                        </span>
-                        <a
-                          href="goodnotes://"
-                          onClick={playPopSound}
-                          className="text-[11px] font-bold text-[#7A8E8E] hover:text-[#3B4747] flex items-center gap-1"
-                        >
-                          <span>✍️</span> Copiar a Goodnotes
-                        </a>
-                      </div>
-
-                      <div className="bg-[#F1F7F7] p-4 rounded-[20px] text-xs text-[#3B4747] leading-relaxed font-semibold italic border-l-4 border-[#F7CBCA]">
-                        &quot;{res.sentence}&quot;
-                      </div>
-
-                      <p className="text-xs text-[#5D6B6B] leading-relaxed font-medium">
-                        <strong className="text-[#3B4747]">Párrafo completo del autor:</strong> {res.paragraph}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {searchResults.length === 0 && searchTerm && uploadedBooks.length > 0 && (
-              <div className="bg-white rounded-[24px] p-6 text-center text-xs text-[#7A8E8E] font-semibold">
-                No se encontraron apariciones de &quot;{searchTerm}&quot; en los libros seleccionados. Intenta con una raíz más corta (por ejemplo: <em>coraz</em> en lugar de <em>corazas</em>).
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 2. SUBIR Y GESTIONAR LIBROS EN PDF */}
-        {/* ========================================================= */}
-        {activeTab === 'subir' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-[28px] p-7 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0] space-y-5 text-center">
-              <div className="w-16 h-16 rounded-[24px] bg-[#F7CBCA] flex items-center justify-center text-3xl mx-auto shadow-sm">
-                📑
-              </div>
-              <div>
-                <h2 className="text-lg font-black text-[#3B4747]">Cargar Obras Clínicas en PDF</h2>
-                <p className="text-xs text-[#7A8E8E] max-w-lg mx-auto mt-1">
-                  Selecciona cualquier libro desde los Archivos de tu iPad o Mac. El sistema extraerá todo el vocabulario y párrafos para que tu diccionario funcione de forma 100% personalizada.
-                </p>
-              </div>
-
-              <div className="pt-2">
-                <label className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[22px] bg-gradient-to-r from-[#F7CBCA] to-[#E8B4B3] hover:brightness-105 text-[#3B4747] font-black text-xs shadow-md cursor-pointer transition-all">
-                  <span>➕</span> Seleccionar archivo PDF
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    multiple
-                    onChange={handlePdfUpload}
-                    disabled={isProcessingPdf}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              {isProcessingPdf && (
-                <div className="text-xs text-[#3B4747] font-bold animate-pulse">
-                  ⏳ Procesando páginas y extrayendo conceptos... Esto puede tardar unos segundos según el tamaño del libro.
-                </div>
-              )}
-            </div>
-
-            {/* LISTA DE LIBROS CARGADOS */}
-            <div>
-              <h3 className="text-sm font-black text-[#3B4747] mb-3">
-                Libros actualmente indexados ({uploadedBooks.length}):
-              </h3>
-
-              {uploadedBooks.length === 0 ? (
-                <div className="text-xs text-[#8A9C9C] italic">No hay libros subidos todavía.</div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {uploadedBooks.map(book => (
-                    <div
-                      key={book.id}
-                      className="bg-white rounded-[24px] p-4 flex items-center justify-between gap-3 shadow-[6px_8px_18px_rgba(189,209,209,0.2)] border border-[#E8F0F0]"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-xs font-black text-[#3B4747] truncate">{book.name}</div>
-                        <div className="text-[10px] text-[#7A8E8E] font-semibold mt-0.5">
-                          {book.pageCount} páginas • Indexado el {book.uploadDate}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleDeleteBook(book.id, book.name)}
-                        className="w-8 h-8 rounded-full bg-[#F1F7F7] hover:bg-[#F7CBCA] text-xs flex items-center justify-center transition-colors shrink-0"
-                        title="Eliminar libro"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* 3. FOCUS & LECTURA PROFUNDA (30M A 3 HORAS) */}
-        {/* ========================================================= */}
-        {activeTab === 'focus' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-[28px] p-7 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0] space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-[10px] uppercase font-black px-3 py-1 rounded-full bg-[#F7CBCA] text-[#3B4747]">
-                    Lectura Profunda & Análisis Clínico 📖
-                  </span>
-                  <h2 className="text-xl font-black text-[#3B4747] mt-1.5">Bloques de Estudio Continuado</h2>
-                  <p className="text-xs text-[#7A8E8E]">Sesiones extensas para avanzar en tus lecturas de Apple Books, Kindle o PDFs.</p>
-                </div>
-
-                <div className="text-4xl font-black font-mono text-[#3B4747] bg-[#F1F7F7] px-6 py-2.5 rounded-[22px] shadow-inner">
-                  {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-                </div>
-              </div>
-
-              {/* SELECTOR DE TIEMPO REAL */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: '30 Minutos', mins: 30 },
-                  { label: '1 Hora (60m)', mins: 60 },
-                  { label: '2 Horas (120m)', mins: 120 },
-                  { label: '3 Horas (180m)', mins: 180 },
-                ].map(item => (
-                  <button
-                    key={item.mins}
-                    onClick={() => {
-                      playPopSound();
-                      setPomoMinutes(item.mins);
-                      setTimeLeft(item.mins * 60);
-                      setIsRunning(false);
-                    }}
-                    className={`py-3 rounded-[20px] text-xs font-black transition-all ${
-                      pomoMinutes === item.mins
-                        ? 'bg-[#F7CBCA] text-[#3B4747] shadow-sm'
-                        : 'bg-[#F1F7F7] text-[#7A8E8E] hover:bg-[#E3EFEA]'
-                    }`}
-                  >
-                    🌸 {item.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* BOTONES DE CONTROL */}
-              <div className="flex flex-wrap sm:flex-nowrap gap-3">
-                <button
-                  onClick={() => {
-                    playPopSound();
-                    setIsRunning(!isRunning);
-                  }}
-                  className={`flex-1 py-4 rounded-[22px] text-xs font-black text-[#3B4747] transition-all shadow-md ${
-                    isRunning ? 'bg-[#F7CBCA] hover:brightness-105' : 'bg-[#BDD1D1] hover:brightness-105'
-                  }`}
-                >
-                  {isRunning ? '⏸️ Pausar Lectura' : `▶️ Iniciar Lectura (${pomoMinutes >= 60 ? `${pomoMinutes / 60}h` : `${pomoMinutes}m`})`}
-                </button>
-                <button
-                  onClick={toggleFocusAudio}
-                  className={`px-5 py-4 rounded-[22px] text-xs font-black flex items-center justify-center gap-2 transition-all ${
-                    isAudioPlaying
-                      ? 'bg-[#D5E5E5] text-[#2C3838] animate-pulse shadow-inner'
-                      : 'bg-[#F1F7F7] text-[#5D6B6B] hover:bg-[#E3EFEA]'
-                  }`}
-                >
-                  <span>{isAudioPlaying ? '🌧️' : '🎧'}</span> {isAudioPlaying ? 'Lluvia Suave (Activa)' : 'Lluvia Ambiental'}
-                </button>
-                <button
-                  onClick={() => {
-                    playPopSound();
-                    setIsRunning(false);
-                    setTimeLeft(pomoMinutes * 60);
-                  }}
-                  className="px-5 py-4 rounded-[22px] text-xs font-black bg-[#F1F7F7] text-[#7A8E8E] hover:bg-[#E3EFEA]"
-                >
-                  ↺ Reiniciar
-                </button>
-              </div>
-            </div>
-
-            {/* ESTADÍSTICAS */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-[24px] p-5 shadow-[6px_8px_18px_rgba(189,209,209,0.2)] border border-[#E8F0F0]">
-                <div className="text-xs font-black text-[#7A8E8E]">Horas Totales de Lectura</div>
-                <div className="text-2xl font-black text-[#3B4747] mt-1">{(totalStudyMinutes / 60).toFixed(1)}h</div>
-                <div className="text-[10px] text-[#5D6B6B] mt-0.5">{totalStudyMinutes} minutos registrados</div>
-              </div>
-
-              <div className="bg-white rounded-[24px] p-5 shadow-[6px_8px_18px_rgba(189,209,209,0.2)] border border-[#E8F0F0]">
-                <div className="text-xs font-black text-[#7A8E8E]">Libros en Memoria</div>
-                <div className="text-2xl font-black text-[#3B4747] mt-1">{uploadedBooks.length}</div>
-                <div className="text-[10px] text-[#5D6B6B] mt-0.5">Disponibles para consulta textual</div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
+            <h1 className="text-2xl font-
