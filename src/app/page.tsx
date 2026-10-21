@@ -32,7 +32,7 @@ interface SearchMatch {
 }
 
 export default function PsychologyMasteryApp() {
-  const [activeTab, setActiveTab] = useState('diccionario');
+  const [activeTab, setActiveTab] = useState('formulacion');
 
   // Libros y Textos Extraídos (Persistentes)
   const [uploadedBooks, setUploadedBooks] = useState<UploadedBook[]>([]);
@@ -43,6 +43,11 @@ export default function PsychologyMasteryApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<SearchMatch[]>([]);
   const [selectedBookFilter, setSelectedBookFilter] = useState('TODOS');
+
+  // Formulación Clínica (Síntomas, Psicoanálisis & DSM-5)
+  const [caseDescription, setCaseDescription] = useState('');
+  const [formulationResult, setFormulationResult] = useState<string | null>(null);
+  const [isFormulating, setIsFormulating] = useState(false);
 
   // Las 14 Obras de Estudio
   const initialStudyBooks: BookStudyItem[] = [
@@ -276,7 +281,7 @@ export default function PsychologyMasteryApp() {
     } catch {}
   };
 
-  // Normalizador de texto: elimina tildes y signos para búsquedas perfectas
+  // Normalizador de texto para búsquedas multi-palabra y sin tildes
   const normalize = (text: string) => {
     return text
       .toLowerCase()
@@ -287,7 +292,7 @@ export default function PsychologyMasteryApp() {
       .trim();
   };
 
-  // Cargar datos guardados
+  // Cargar datos
   useEffect(() => {
     const savedBooks = localStorage.getItem('psy_uploaded_books');
     const savedStudyBooks = localStorage.getItem('psy_study_books');
@@ -321,7 +326,7 @@ export default function PsychologyMasteryApp() {
     localStorage.setItem('psy_study_mins', totalStudyMinutes.toString());
   }, [totalStudyMinutes]);
 
-  // Manejador del temporizador
+  // Temporizador
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isRunning && timeLeft > 0) {
@@ -335,7 +340,7 @@ export default function PsychologyMasteryApp() {
     return () => clearInterval(timer);
   }, [isRunning, timeLeft, pomoMinutes]);
 
-  // Audio ambiental de lluvia suave
+  // Audio ambiental de lluvia
   const toggleFocusAudio = () => {
     playPopSound();
     if (isAudioPlaying) {
@@ -437,7 +442,7 @@ export default function PsychologyMasteryApp() {
     }
   };
 
-  // Buscador Contextual Multi-palabra (Ej: "terapia catártica", "coraza muscular")
+  // Buscador Contextual Multi-palabra
   const handleSearchWord = () => {
     playPopSound();
     if (!searchTerm.trim()) {
@@ -460,11 +465,7 @@ export default function PsychologyMasteryApp() {
 
       paragraphs.forEach(p => {
         const normP = normalize(p);
-
-        // Coincidencia 1: La frase exacta completa (ej. "terapia catartica")
         const hasExactPhrase = normP.includes(normalizedTerm);
-
-        // Coincidencia 2: Todas las palabras clave están dentro del mismo párrafo
         const hasAllTokens = searchTokens.length > 1 && searchTokens.every(tok => normP.includes(tok));
 
         if (hasExactPhrase || hasAllTokens) {
@@ -487,6 +488,63 @@ export default function PsychologyMasteryApp() {
     if (matches.length > 0) {
       playChimeSound();
     }
+  };
+
+  // Motor de Formulación Clínica Psicoanalítica & Cruce DSM-5
+  const handleGenerateFormulation = () => {
+    playPopSound();
+    if (!caseDescription.trim()) return;
+    setIsFormulating(true);
+
+    setTimeout(() => {
+      const lower = caseDescription.toLowerCase();
+      let hypothesis = '';
+      let defense = '';
+      let bodyArmor = '';
+      let adlerComp = '';
+      let dsmCat = '';
+
+      if (lower.includes('cuerpo') || lower.includes('tensión') || lower.includes('contractura') || lower.includes('respiración') || lower.includes('cuello') || lower.includes('espalda')) {
+        bodyArmor = 'Wilhelm Reich (Análisis del carácter): Evidencia clara de fijación en la "coraza muscular". Las tensiones crónicas fungen como un blindaje somático que inmoviliza la energía libidinal y la agresividad reprimida.';
+      } else {
+        bodyArmor = 'Wilhelm Reich: Predominio de coraza caracterológica conductual; rigidez yoica adaptativa como respuesta a frustraciones tempranas del desarrollo.';
+      }
+
+      if (lower.includes('culpa') || lower.includes('perfeccion') || lower.includes('orden') || lower.includes('limpieza') || lower.includes('control') || lower.includes('obsesi')) {
+        hypothesis = 'Sigmund Freud (El yo y el ello): Conflicto agudo entre un Superyó tiránico e introyectado y las mociones pulsionales del Ello. El síntoma opera como castigo o expiación inconsciente.';
+        defense = 'Anna Freud: Mecanismos nucleares de Formación Reactiva, Aislamiento del Afecto y Anulación Mágica (carácter obsesivo).';
+        dsmCat = 'DSM-5: Compatible con Trastorno de la Personalidad Obsesivo-Compulsiva (F60.5) o Trastorno Obsesivo-Compulsivo (F42).';
+      } else if (lower.includes('miedo') || lower.includes('abandono') || lower.includes('vacio') || lower.includes('inestable') || lower.includes('impulsiv') || lower.includes('ira')) {
+        hypothesis = 'Sigmund Freud / Kernberg: Falla en la integración de representaciones objetales (objeto bueno vs objeto malo). Falla de la función integradora del Yo ante la angustia de pérdida.';
+        defense = 'Anna Freud: Predominio de la Escisión (splitting) e Identificación Proyectiva como defensa frente a la ambivalencia.';
+        dsmCat = 'DSM-5: Criterios alineados con Trastorno de la Personalidad Límite (Borderline, F60.3).';
+      } else if (lower.includes('paralisis') || lower.includes('anestesia') || lower.includes('ciego') || lower.includes('dolor') || lower.includes('desmayo')) {
+        hypothesis = 'Sigmund Freud y Josef Breuer (Escritos sobre la histeria): Cuadro clásico de conversión histérica. El afecto estrangulado intolerable se traspone hacia una inervación somática con valor simbólico.';
+        defense = 'Anna Freud: Represión primaria masiva con ganancia primaria (alivio del conflicto) y ganancia secundaria (atención).';
+        dsmCat = 'DSM-5: Trastorno de Síntomas Neurológicos Funcionales / Trastorno de Conversión (F44.4).';
+      } else {
+        hypothesis = 'Sigmund Freud (Introducción al psicoanálisis): El síntoma es una transacción simbólica entre una moción pulsional que busca descarga y la barrera de censura del Yo.';
+        defense = 'Anna Freud: Mecanismo de Represión fundamental secundado por Desplazamiento.';
+        dsmCat = 'DSM-5: Trastorno de Adaptación o Trastorno de Ansiedad Generalizada (F41.1).';
+      }
+
+      adlerComp = 'Alfred Adler (El carácter neurótico): La manifestación clínica opera como un "Arreglo Neurótico" teleológico destinado a compensar un profundo "Sentimiento de Inferioridad", construyendo una posición de dominio o excusa ficticia.';
+
+      setFormulationResult(
+        `📋 FORMULACIÓN CLÍNICA & PSICODINÁMICA INTEGRADA:\n\n` +
+        `1. HIPÓTESIS ESTRUCTURAL FREUDIANA:\n${hypothesis}\n\n` +
+        `2. DEFENSAS YOICAS (ANNA FREUD):\n${defense}\n\n` +
+        `3. CORAZA Y REGISTRO SOMÁTICO (WILHELM REICH):\n${bodyArmor}\n\n` +
+        `4. FINALISMO Y COMPENSACIÓN (ALFRED ADLER):\n${adlerComp}\n\n` +
+        `5. CRUCE NOSOLÓGICO DSM-5:\n${dsmCat}\n\n` +
+        `💡 Sugerencia técnica para Goodnotes/Notion: Registrar en la sesión los puntos de fijación edípica/preedípica y el beneficio secundario que sostiene el síntoma.`
+      );
+
+      setIsFormulating(false);
+      playChimeSound();
+      setProcessStatus('✨ Formulación clínica generada con éxito.');
+      setTimeout(() => setProcessStatus(null), 3500);
+    }, 1200);
   };
 
   const handleDeleteBook = (id: string, name: string) => {
@@ -544,10 +602,11 @@ export default function PsychologyMasteryApp() {
           {/* NAVEGACIÓN */}
           <nav className="space-y-2">
             {[
-              { id: 'diccionario', label: 'Diccionario de Mis Libros', icon: '🔍', badge: 'Frases y Conceptos', bg: 'bg-[#F7CBCA]' },
-              { id: 'obras', label: 'Mis Obras & Etapas', icon: '📖', badge: '14 Libros', bg: 'bg-[#BDD1D1]' },
-              { id: 'subir', label: 'Subir & Gestionar PDFs', icon: '📤', badge: 'Cargar', bg: 'bg-[#D5E5E5]' },
-              { id: 'focus', label: 'Focus & Lectura Profunda', icon: '⏱️', badge: '30m - 3h', bg: 'bg-[#F7CBCA]' },
+              { id: 'formulacion', label: 'Formulación Clínica & DSM-5', icon: '🩺', badge: 'Síntomas', bg: 'bg-[#F7CBCA]' },
+              { id: 'diccionario', label: 'Diccionario de Mis Libros', icon: '🔍', badge: 'Frases y PDFs', bg: 'bg-[#BDD1D1]' },
+              { id: 'obras', label: 'Mis Obras & Etapas', icon: '📖', badge: '14 Libros', bg: 'bg-[#D5E5E5]' },
+              { id: 'subir', label: 'Subir & Gestionar PDFs', icon: '📤', badge: 'Cargar', bg: 'bg-[#F7CBCA]' },
+              { id: 'focus', label: 'Focus & Lectura Profunda', icon: '⏱️', badge: '30m - 3h', bg: 'bg-[#D5E5E5]' },
             ].map(item => {
               const active = activeTab === item.id;
               return (
@@ -643,7 +702,63 @@ export default function PsychologyMasteryApp() {
           </div>
         </div>
 
-        {/* 1. DICCIONARIO CONTEXTUAL (MULTI-PALABRA Y FRASES) */}
+        {/* ========================================================= */}
+        {/* 1. FORMULACIÓN CLÍNICA & DIAGNÓSTICO (SÍNTOMAS, DSM-5 & PSICOANÁLISIS) */}
+        {/* ========================================================= */}
+        {activeTab === 'formulacion' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-[#3B4747]">Formulación Clínica & Diagnóstico Psicoanalítico 🩺</h2>
+              <p className="text-xs text-[#7A8E8E] mt-0.5">
+                Ingresa los síntomas, quejas del paciente o manifestaciones corporales para formular una hipótesis cruzada entre Freud, Adler, Reich, Anna Freud y el DSM-5.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-[28px] p-6 sm:p-7 space-y-4 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0]">
+              <label className="block text-xs font-black text-[#3B4747]">
+                Ingresa los síntomas o descripción del caso clínico:
+              </label>
+
+              <textarea
+                value={caseDescription}
+                onChange={e => setCaseDescription(e.target.value)}
+                rows={5}
+                placeholder="Ejemplo: Paciente presenta dolor y tensión crónica en el cuello y pecho, angustia de perder el control, culpa extrema por errores mínimos y necesidad compulsiva de orden..."
+                className="w-full bg-[#F1F7F7] rounded-[20px] p-4 text-xs text-[#3B4747] placeholder-[#8A9C9C] focus:outline-none font-medium shadow-inner"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleGenerateFormulation}
+                  disabled={isFormulating || !caseDescription.trim()}
+                  className="flex-1 py-3.5 rounded-[20px] bg-gradient-to-r from-[#F7CBCA] to-[#E8B4B3] hover:brightness-105 text-[#3B4747] font-black text-xs shadow-md disabled:opacity-50 transition-all"
+                >
+                  {isFormulating ? 'Analizando síntomas y formulando hipótesis...' : '✨ Diagnosticar con Psicoanálisis & DSM-5'}
+                </button>
+                <button
+                  onClick={() => {
+                    playPopSound();
+                    setCaseDescription('');
+                    setFormulationResult(null);
+                  }}
+                  className="px-5 py-3.5 rounded-[20px] bg-[#F1F7F7] text-[#7A8E8E] text-xs font-black hover:bg-[#E3EFEA]"
+                >
+                  Limpiar
+                </button>
+              </div>
+
+              {formulationResult && (
+                <div className="mt-4 p-5 rounded-[22px] bg-[#FAF8F5] text-xs text-[#3B4747] leading-relaxed whitespace-pre-line font-medium border border-[#E8E0D5] shadow-inner">
+                  {formulationResult}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* 2. DICCIONARIO CONTEXTUAL (MULTI-PALABRA Y FRASES) */}
+        {/* ========================================================= */}
         {activeTab === 'diccionario' && (
           <div className="space-y-6">
             <div className="bg-white rounded-[28px] p-6 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0] space-y-4">
@@ -765,7 +880,9 @@ export default function PsychologyMasteryApp() {
           </div>
         )}
 
-        {/* 2. MIS OBRAS, AÑO DE ESCRITURA Y ETAPAS (14 LIBROS) */}
+        {/* ========================================================= */}
+        {/* 3. MIS OBRAS, AÑO DE ESCRITURA Y ETAPAS (14 LIBROS) */}
+        {/* ========================================================= */}
         {activeTab === 'obras' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -784,7 +901,7 @@ export default function PsychologyMasteryApp() {
                   className="bg-white rounded-[16px] px-3 py-1.5 text-xs font-black text-[#3B4747] shadow-sm focus:outline-none"
                 >
                   <option value="TODOS">Todas las Etapas</option>
-                  <option value="Completado">✅ Completados</option>
+                  <option value="Completado">✅ Terminado</option>
                   <option value="En lectura">📖 En lectura</option>
                   <option value="Por leer">⏳ Por leer</option>
                 </select>
@@ -896,7 +1013,9 @@ export default function PsychologyMasteryApp() {
           </div>
         )}
 
-        {/* 3. SUBIR Y GESTIONAR LIBROS EN PDF */}
+        {/* ========================================================= */}
+        {/* 4. SUBIR Y GESTIONAR LIBROS EN PDF */}
+        {/* ========================================================= */}
         {activeTab === 'subir' && (
           <div className="space-y-6">
             <div className="bg-white rounded-[28px] p-7 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0] space-y-5 text-center">
@@ -967,7 +1086,9 @@ export default function PsychologyMasteryApp() {
           </div>
         )}
 
-        {/* 4. FOCUS & LECTURA PROFUNDA (30M A 3 HORAS) */}
+        {/* ========================================================= */}
+        {/* 5. FOCUS & LECTURA PROFUNDA (30M A 3 HORAS) */}
+        {/* ========================================================= */}
         {activeTab === 'focus' && (
           <div className="space-y-6">
             <div className="bg-white rounded-[28px] p-7 shadow-[8px_10px_24px_rgba(189,209,209,0.3)] border border-[#E8F0F0] space-y-6">
